@@ -21,6 +21,13 @@ channel's standing with YouTube.
 - Generates ready-to-paste **share captions** for your recent videos —
   tailored per platform (X/Twitter, Instagram, Facebook, LinkedIn, WhatsApp,
   Reddit) — that you copy and post yourself. Nothing is auto-posted.
+- Optionally, after Google sign-in, **uploads a video straight from your
+  browser to your channel** (title/description/tags/visibility, with
+  scheduled publishing) using YouTube's resumable upload protocol — the file
+  goes directly to Google, never through any other server.
+- Optionally, **posts to a Facebook Page or Instagram Business account you
+  administer** when you click a button — not to groups or accounts you don't
+  own, and never automatically/unattended.
 - Includes a static checklist of proven, ToS-compliant growth tactics.
 
 ## Setup
@@ -49,8 +56,37 @@ channel owner. To see it:
    (e.g. `http://localhost:8000`) to "Authorized JavaScript origins".
 3. Paste that Client ID into the "Connect Google account" section and click
    **Connect Google Account**. You'll get a Google consent screen asking to
-   share read-only YouTube Analytics access with this page, in your browser
-   only.
+   share read-only YouTube Analytics access, and permission to upload videos
+   to your channel, with this page, in your browser only.
+
+Once connected, the "Upload a video" section becomes usable — pick a file,
+fill in the metadata, and choose Public, Unlisted, or Private/Scheduled (set
+a publish time and YouTube will auto-publish it then).
+
+### Optional: posting to your own Facebook Page / Instagram
+
+This posts only to a Page or Instagram Business account **you administer** —
+not to groups or other people's accounts. There's no OAuth flow built in
+here (Meta's app review process for that is heavier); instead you generate
+your own long-lived token:
+
+1. Create an app at [Meta for Developers](https://developers.facebook.com/apps)
+   and add the "Facebook Login" and "Instagram Graph API" products.
+2. In the [Graph API Explorer](https://developers.facebook.com/tools/explorer/),
+   select your app and a Page you administer, and generate a token with
+   `pages_manage_posts` (add `instagram_content_publish` too if you'll post
+   to Instagram).
+3. Find your Page ID from the Page's "About" section, and your Instagram
+   Business Account ID via `GET /{page-id}?fields=instagram_business_account`
+   in the Explorer.
+4. Paste the Page ID and token into the "Post to your own Facebook Page /
+   Instagram" section and click **Save Meta credentials**.
+
+Posting to Instagram additionally requires a **public URL to the video
+file itself** (Instagram's API fetches the video from that URL — it can't
+receive an uploaded file directly, and it can't repost a YouTube link as a
+Reel). You'll need to host the export somewhere reachable (cloud storage,
+your own site, etc.) and paste that URL in before posting.
 
 ## Notes
 

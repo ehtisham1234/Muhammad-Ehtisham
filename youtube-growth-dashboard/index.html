@@ -38,17 +38,18 @@
   </section>
 
   <section id="oauth-setup" class="card" hidden>
-    <h2>2. Connect Google account for watch hours (optional)</h2>
+    <h2>2. Connect Google account (watch hours + video upload)</h2>
     <p>
-      View/like/comment counts are public, but watch time is private to you.
-      Seeing it requires you to sign in with Google and grant read-only access
-      to your own <a href="https://developers.google.com/youtube/analytics" target="_blank" rel="noopener">YouTube Analytics</a>.
-      Nothing is sent anywhere except Google's servers — this page has no backend.
+      View/like/comment counts are public, but watch time and uploading are
+      private to you. Signing in with Google grants this page — running only
+      in your browser — read-only <a href="https://developers.google.com/youtube/analytics" target="_blank" rel="noopener">YouTube Analytics</a>
+      access and permission to upload videos to your own channel. Nothing is
+      sent anywhere except Google's servers — this page has no backend.
     </p>
     <ol class="setup-steps">
       <li>In the same Google Cloud project, go to "APIs &amp; Services &gt; Credentials" and create an <strong>OAuth 2.0 Client ID</strong> of type "Web application".</li>
       <li>Add the URL you're opening this page from (e.g. <code>http://localhost:8000</code>) to "Authorized JavaScript origins".</li>
-      <li>Enable the "YouTube Analytics API" for the project.</li>
+      <li>Enable the "YouTube Analytics API" for the project (the Data API from step 1 already covers uploads).</li>
     </ol>
     <form id="oauth-form">
       <label for="oauthClientId">OAuth Client ID</label>
@@ -57,6 +58,84 @@
     </form>
     <p id="oauth-error-message" class="error" hidden></p>
     <p id="oauth-status" class="hint" hidden></p>
+  </section>
+
+  <section id="publish-setup" class="card" hidden>
+    <h2>3. Upload a video</h2>
+    <p class="hint">Requires step 2 above. Uploads go straight from your browser to YouTube using the resumable upload protocol — the video file never passes through any other server.</p>
+    <form id="publish-form">
+      <label for="videoFile">Video file</label>
+      <input type="file" id="videoFile" accept="video/*" required />
+
+      <label for="videoTitle">Title</label>
+      <input type="text" id="videoTitle" maxlength="100" required />
+
+      <label for="videoDescription">Description</label>
+      <textarea id="videoDescription" rows="4"></textarea>
+
+      <label for="videoTags">Tags (comma-separated)</label>
+      <input type="text" id="videoTags" placeholder="tag one, tag two" />
+
+      <label for="videoPrivacy">Visibility</label>
+      <select id="videoPrivacy">
+        <option value="public">Public</option>
+        <option value="unlisted">Unlisted</option>
+        <option value="private">Private / Scheduled</option>
+      </select>
+
+      <div id="scheduleWrap" hidden>
+        <label for="videoSchedule">Publish at</label>
+        <input type="datetime-local" id="videoSchedule" />
+      </div>
+
+      <button type="submit" id="publish-btn">Upload to YouTube</button>
+    </form>
+    <div id="publish-progress" class="hint" hidden></div>
+    <p id="publish-error-message" class="error" hidden></p>
+    <div id="publish-result" hidden></div>
+  </section>
+
+  <section id="meta-setup" class="card" hidden>
+    <h2>4. Post to your own Facebook Page / Instagram (optional)</h2>
+    <p class="hint">
+      This only posts to a Facebook Page or Instagram Business account that <strong>you administer</strong> —
+      not to groups you don't own. Posting into other people's groups automatically is a spam
+      pattern Meta detects and bans for, so it isn't offered here.
+    </p>
+    <ol class="setup-steps">
+      <li>Create an app at <a href="https://developers.facebook.com/apps" target="_blank" rel="noopener">Meta for Developers</a> and add the "Facebook Login" and "Instagram Graph API" products.</li>
+      <li>Use the <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener">Graph API Explorer</a> to generate a long-lived Page Access Token with <code>pages_manage_posts</code> (and <code>instagram_content_publish</code> if you'll post to Instagram) for a Page you administer.</li>
+      <li>Find your Page ID under your Page's "About" info, and your Instagram Business Account ID via <code>GET /{page-id}?fields=instagram_business_account</code> in the Explorer.</li>
+    </ol>
+    <form id="meta-form">
+      <label for="fbPageId">Facebook Page ID</label>
+      <input type="text" id="fbPageId" autocomplete="off" />
+
+      <label for="fbPageToken">Page Access Token</label>
+      <input type="password" id="fbPageToken" autocomplete="off" />
+
+      <label for="igAccountId">Instagram Business Account ID (optional)</label>
+      <input type="text" id="igAccountId" autocomplete="off" />
+
+      <button type="submit">Save Meta credentials</button>
+    </form>
+    <p id="meta-error-message" class="error" hidden></p>
+    <p id="meta-status" class="hint" hidden></p>
+
+    <div id="meta-post-panel" hidden>
+      <h3>Post your latest upload</h3>
+      <label for="metaMessage">Facebook post text</label>
+      <textarea id="metaMessage" rows="3"></textarea>
+      <button type="button" id="post-facebook-btn">Post to Facebook Page</button>
+      <p id="facebook-post-status" class="hint" hidden></p>
+
+      <label for="igVideoUrl">Public video file URL (mp4, required for Instagram — Instagram fetches the file, it can't take an upload directly)</label>
+      <input type="text" id="igVideoUrl" placeholder="https://example.com/your-video.mp4" />
+      <label for="igCaption">Instagram caption</label>
+      <textarea id="igCaption" rows="3"></textarea>
+      <button type="button" id="post-instagram-btn">Post Reel to Instagram</button>
+      <p id="instagram-post-status" class="hint" hidden></p>
+    </div>
   </section>
 
   <section id="dashboard" hidden>

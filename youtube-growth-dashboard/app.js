@@ -1,6 +1,8 @@
 const API_BASE = "https://www.googleapis.com/youtube/v3";
+const UPLOAD_API_BASE = "https://www.googleapis.com/upload/youtube/v3/videos";
 const ANALYTICS_API_BASE = "https://youtubeanalytics.googleapis.com/v2";
-const YT_ANALYTICS_SCOPE = "https://www.googleapis.com/auth/yt-analytics.readonly";
+const GOOGLE_SCOPES =
+  "https://www.googleapis.com/auth/yt-analytics.readonly https://www.googleapis.com/auth/youtube.upload";
 const MAX_VIDEOS = 25;
 
 const form = document.getElementById("connect-form");
@@ -13,10 +15,24 @@ const oauthForm = document.getElementById("oauth-form");
 const oauthClientIdInput = document.getElementById("oauthClientId");
 const oauthErrorEl = document.getElementById("oauth-error-message");
 const oauthStatusEl = document.getElementById("oauth-status");
+const publishSetup = document.getElementById("publish-setup");
+const publishForm = document.getElementById("publish-form");
+const videoPrivacySelect = document.getElementById("videoPrivacy");
+const scheduleWrap = document.getElementById("scheduleWrap");
+const publishErrorEl = document.getElementById("publish-error-message");
+const publishProgressEl = document.getElementById("publish-progress");
+const publishResultEl = document.getElementById("publish-result");
+const metaSetup = document.getElementById("meta-setup");
+const metaForm = document.getElementById("meta-form");
+const metaErrorEl = document.getElementById("meta-error-message");
+const metaStatusEl = document.getElementById("meta-status");
+const metaPostPanel = document.getElementById("meta-post-panel");
 
 let currentChannel = null;
 let currentVideos = [];
 let tokenClient = null;
+let currentAccessToken = null;
+let lastUploadedVideo = null;
 
 restoreSavedInputs();
 
@@ -43,6 +59,8 @@ form.addEventListener("submit", async (e) => {
     renderDashboard(channel, videos);
     renderPromoteList(videos, channel);
     oauthSetup.hidden = false;
+    metaSetup.hidden = false;
+    restoreMetaInputs();
   } catch (err) {
     showError(err.message || "Something went wrong. Check your API key and channel identifier.");
   } finally {
@@ -66,18 +84,20 @@ oauthForm.addEventListener("submit", (e) => {
 
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: clientId,
-    scope: YT_ANALYTICS_SCOPE,
+    scope: GOOGLE_SCOPES,
     callback: async (response) => {
       if (response.error) {
         showOauthError(`Google sign-in failed: ${response.error}`);
         return;
       }
+      currentAccessToken = response.access_token;
+      publishSetup.hidden = false;
       oauthStatusEl.hidden = false;
       oauthStatusEl.textContent = "Connected. Loading watch hours...";
       oauthStatusEl.classList.add("connected");
       try {
         await loadWatchHours(response.access_token);
-        oauthStatusEl.textContent = "Connected — watch hours below reflect your last sign-in.";
+        oauthStatusEl.textContent = "Connected — watch hours below reflect your last sign-in, and you can now upload videos below.";
       } catch (err) {
         showOauthError(err.message || "Could not load watch hours.");
       }
@@ -85,6 +105,134 @@ oauthForm.addEventListener("submit", (e) => {
   });
 
   tokenClient.requestAccessToken();
+});
+
+videoPrivacySelect.addEventListener("change", () => {
+  scheduleWrap.hidden = videoPrivacySelect.value !== "private";
+});
+
+publishForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  hidePublishError();
+  publishResultEl.hidden = true;
+
+  if (!currentAccessToken) {
+    showPublishError("Connect your Google account above first.");
+    return;
+  }
+
+  const file = document.getElementById("videoFile").files[0];
+  if (!file) return;
+
+  const title = document.getElementById("videoTitle").value.trim();
+  const description = document.getElementById("videoDescription").value.trim();
+  const tags = document
+    .getElementById("videoTags")
+    .value.split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+  const privacyStatus = videoPrivacySelect.value;
+  const scheduleVal = document.getElementById("videoSchedule").value;
+
+  const status = { privacyStatus, selfDeclaredMadeForKids: false };
+  if (privacyStatus === "private" && scheduleVal) {
+    status.publishAt = new Date(scheduleVal).toISOString();
+  }
+
+  const submitBtn = publishForm.querySelector("button");
+  submitBtn.disabled = true;
+  publishProgressEl.hidden = false;
+  publishProgressEl.textContent = "Starting upload session...";
+
+  try {
+    const uploadUrl = await startResumableUpload(currentAccessToken, file, {
+      snippet: { title, description, tags },
+      status,
+    });
+    publishProgressEl.textContent = "Uploading 0%...";
+    const result = await uploadFileToUrl(uploadUrl, file, (fraction) => {
+      publishProgressEl.textContent = `Uploading ${Math.round(fraction * 100)}%...`;
+    });
+    publishProgressEl.textContent = "Upload complete.";
+    lastUploadedVideo = {
+      id: result.id,
+      title,
+      description,
+      watchUrl: `https://youtu.be/${result.id}`,
+    };
+    renderPublishResult(lastUploadedVideo, status.privacyStatus);
+    preparePostPanel(lastUploadedVideo);
+  } catch (err) {
+    showPublishError(err.message || "Upload failed.");
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+metaForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  hideMetaError();
+
+  const fbPageId = document.getElementById("fbPageId").value.trim();
+  const fbPageToken = document.getElementById("fbPageToken").value.trim();
+  const igAccountId = document.getElementById("igAccountId").value.trim();
+
+  if (!fbPageId || !fbPageToken) {
+    showMetaError("Page ID and Page Access Token are required.");
+    return;
+  }
+
+  localStorage.setItem("yt_dashboard_fb_page_id", fbPageId);
+  localStorage.setItem("yt_dashboard_fb_page_token", fbPageToken);
+  localStorage.setItem("yt_dashboard_ig_account_id", igAccountId);
+
+  metaStatusEl.hidden = false;
+  metaStatusEl.textContent = "Saved. Ready to post your latest upload.";
+  metaPostPanel.hidden = false;
+
+  if (lastUploadedVideo) preparePostPanel(lastUploadedVideo);
+});
+
+document.getElementById("post-facebook-btn").addEventListener("click", async () => {
+  const statusEl = document.getElementById("facebook-post-status");
+  const fbPageId = document.getElementById("fbPageId").value.trim();
+  const fbPageToken = document.getElementById("fbPageToken").value.trim();
+  const message = document.getElementById("metaMessage").value.trim();
+  const link = lastUploadedVideo ? lastUploadedVideo.watchUrl : "";
+
+  statusEl.hidden = false;
+  statusEl.textContent = "Posting...";
+  try {
+    await postToFacebookPage(fbPageId, fbPageToken, message, link);
+    statusEl.textContent = "Posted to your Facebook Page.";
+  } catch (err) {
+    statusEl.textContent = `Failed: ${err.message}`;
+  }
+});
+
+document.getElementById("post-instagram-btn").addEventListener("click", async () => {
+  const statusEl = document.getElementById("instagram-post-status");
+  const fbPageToken = document.getElementById("fbPageToken").value.trim();
+  const igAccountId = document.getElementById("igAccountId").value.trim();
+  const videoUrl = document.getElementById("igVideoUrl").value.trim();
+  const caption = document.getElementById("igCaption").value.trim();
+
+  if (!igAccountId || !videoUrl) {
+    statusEl.hidden = false;
+    statusEl.textContent = "Instagram Business Account ID and a public video URL are both required.";
+    return;
+  }
+
+  statusEl.hidden = false;
+  statusEl.textContent = "Creating media container...";
+  try {
+    await postReelToInstagram(igAccountId, fbPageToken, videoUrl, caption, (msg) => {
+      statusEl.textContent = msg;
+    });
+    statusEl.textContent = "Posted to Instagram.";
+  } catch (err) {
+    statusEl.textContent = `Failed: ${err.message}`;
+  }
 });
 
 function restoreSavedInputs() {
@@ -112,6 +260,162 @@ function showOauthError(msg) {
 
 function hideOauthError() {
   oauthErrorEl.hidden = true;
+}
+
+function showPublishError(msg) {
+  publishErrorEl.textContent = msg;
+  publishErrorEl.hidden = false;
+}
+
+function hidePublishError() {
+  publishErrorEl.hidden = true;
+}
+
+function showMetaError(msg) {
+  metaErrorEl.textContent = msg;
+  metaErrorEl.hidden = false;
+}
+
+function hideMetaError() {
+  metaErrorEl.hidden = true;
+}
+
+function restoreMetaInputs() {
+  const pageId = localStorage.getItem("yt_dashboard_fb_page_id");
+  const pageToken = localStorage.getItem("yt_dashboard_fb_page_token");
+  const igAccountId = localStorage.getItem("yt_dashboard_ig_account_id");
+  if (pageId) document.getElementById("fbPageId").value = pageId;
+  if (pageToken) document.getElementById("fbPageToken").value = pageToken;
+  if (igAccountId) document.getElementById("igAccountId").value = igAccountId;
+  if (pageId && pageToken) metaPostPanel.hidden = false;
+}
+
+function renderPublishResult(video, privacyStatus) {
+  publishResultEl.hidden = false;
+  publishResultEl.innerHTML = `
+    <p>Uploaded as <strong>${privacyStatus}</strong>: <a href="${video.watchUrl}" target="_blank" rel="noopener">${video.watchUrl}</a></p>
+  `;
+}
+
+function preparePostPanel(video) {
+  const messageEl = document.getElementById("metaMessage");
+  const captionEl = document.getElementById("igCaption");
+  if (!messageEl.value) {
+    messageEl.value = `New video: "${video.title}"\n\nWatch it here: ${video.watchUrl}`;
+  }
+  if (!captionEl.value) {
+    captionEl.value = `${video.title}\n\nFull video on my YouTube channel — link in bio.`;
+  }
+}
+
+async function startResumableUpload(accessToken, file, metadata) {
+  const res = await fetch(`${UPLOAD_API_BASE}?uploadType=resumable&part=snippet,status`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json; charset=UTF-8",
+      "X-Upload-Content-Type": file.type || "video/*",
+      "X-Upload-Content-Length": String(file.size),
+    },
+    body: JSON.stringify(metadata),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.error?.message || `Could not start upload (${res.status})`);
+  }
+  const location = res.headers.get("Location") || res.headers.get("location");
+  if (!location) {
+    throw new Error("YouTube didn't return an upload URL. Your access token may have expired — reconnect your Google account and try again.");
+  }
+  return location;
+}
+
+function uploadFileToUrl(url, file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.setRequestHeader("Content-Type", file.type || "video/*");
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total);
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          resolve(JSON.parse(xhr.responseText));
+        } catch {
+          reject(new Error("Upload succeeded but the response couldn't be parsed."));
+        }
+      } else {
+        reject(new Error(`Upload failed (${xhr.status}): ${xhr.responseText}`));
+      }
+    };
+    xhr.onerror = () => reject(new Error("Network error during upload."));
+    xhr.send(file);
+  });
+}
+
+async function postToFacebookPage(pageId, pageToken, message, link) {
+  const url = `https://graph.facebook.com/v19.0/${pageId}/feed`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ message, link, access_token: pageToken }),
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) {
+    throw new Error(data.error?.message || `Facebook API error (${res.status})`);
+  }
+  return data;
+}
+
+async function postReelToInstagram(igAccountId, accessToken, videoUrl, caption, onStatus) {
+  const createRes = await fetch(`https://graph.facebook.com/v19.0/${igAccountId}/media`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      media_type: "REELS",
+      video_url: videoUrl,
+      caption,
+      access_token: accessToken,
+    }),
+  });
+  const createData = await createRes.json();
+  if (!createRes.ok || createData.error) {
+    throw new Error(createData.error?.message || `Instagram API error (${createRes.status})`);
+  }
+  const containerId = createData.id;
+
+  for (let attempt = 0; attempt < 15; attempt++) {
+    onStatus(`Processing video (${attempt + 1}/15)...`);
+    await sleep(3000);
+    const statusRes = await fetch(
+      `https://graph.facebook.com/v19.0/${containerId}?fields=status_code&access_token=${encodeURIComponent(accessToken)}`
+    );
+    const statusData = await statusRes.json();
+    if (statusData.status_code === "FINISHED") break;
+    if (statusData.status_code === "ERROR") {
+      throw new Error("Instagram failed to process the video.");
+    }
+    if (attempt === 14) {
+      throw new Error("Instagram is still processing the video — try publishing again in a minute.");
+    }
+  }
+
+  onStatus("Publishing...");
+  const publishRes = await fetch(`https://graph.facebook.com/v19.0/${igAccountId}/media_publish`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ creation_id: containerId, access_token: accessToken }),
+  });
+  const publishData = await publishRes.json();
+  if (!publishRes.ok || publishData.error) {
+    throw new Error(publishData.error?.message || `Instagram publish error (${publishRes.status})`);
+  }
+  return publishData;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function apiGet(path, params) {
