@@ -88,6 +88,23 @@ receive an uploaded file directly, and it can't repost a YouTube link as a
 Reel). You'll need to host the export somewhere reachable (cloud storage,
 your own site, etc.) and paste that URL in before posting.
 
+### One-click pipeline: upload → Facebook → Instagram
+
+Once steps 2 and 4 are set up, check "Also post to Facebook / Instagram
+automatically once this upload finishes" in the upload form before clicking
+**Upload to YouTube**. One click then runs the whole chain: upload the video,
+post the pre-filled caption to your Facebook Page, and (if an Instagram
+Business Account ID and public video URL are filled in) publish it as an
+Instagram Reel too. Each step's status is shown live; a missing piece (e.g.
+no Meta credentials saved, or no public video URL) is skipped with a message
+rather than failing the whole run.
+
+This is the practical ceiling for a page with no backend: it still needs
+your browser tab open and a click to start. True unattended background
+posting (e.g. "run every time I upload, even when I'm offline") would
+require a server that stores your long-lived tokens — a different, higher-risk
+trade-off this project deliberately doesn't make.
+
 ## Notes
 
 - The YouTube Data API has a free daily quota; this dashboard's calls are

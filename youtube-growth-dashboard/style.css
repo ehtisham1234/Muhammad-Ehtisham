@@ -98,6 +98,14 @@ form select {
   font-family: inherit;
 }
 
+form input[type="checkbox"] {
+  appearance: auto;
+  -webkit-appearance: checkbox;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
 form textarea {
   resize: vertical;
 }
@@ -114,6 +122,24 @@ form > div {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+}
+
+form > div.checkbox-row {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.checkbox-row input[type="checkbox"] {
+  margin-top: 0.2rem;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.checkbox-row label {
+  font-size: 0.85rem;
+  color: var(--text-dim);
 }
 
 #meta-post-panel {

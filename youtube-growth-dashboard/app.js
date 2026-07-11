@@ -162,12 +162,36 @@ publishForm.addEventListener("submit", async (e) => {
     };
     renderPublishResult(lastUploadedVideo, status.privacyStatus);
     preparePostPanel(lastUploadedVideo);
+
+    if (document.getElementById("autoPostAfterUpload").checked) {
+      await runAutoPostChain();
+    }
   } catch (err) {
     showPublishError(err.message || "Upload failed.");
   } finally {
     submitBtn.disabled = false;
   }
 });
+
+async function runAutoPostChain() {
+  metaPostPanel.hidden = false;
+  const fbPageId = document.getElementById("fbPageId").value.trim();
+  const fbPageToken = document.getElementById("fbPageToken").value.trim();
+  const igAccountId = document.getElementById("igAccountId").value.trim();
+  const igVideoUrl = document.getElementById("igVideoUrl").value.trim();
+
+  if (fbPageId && fbPageToken) {
+    await postFacebookNow();
+  } else {
+    publishProgressEl.textContent += " Skipped Facebook (no saved credentials in step 4).";
+  }
+
+  if (igAccountId && fbPageToken && igVideoUrl) {
+    await postInstagramNow();
+  } else if (igAccountId || igVideoUrl) {
+    publishProgressEl.textContent += " Skipped Instagram (missing account ID, token, or public video URL).";
+  }
+}
 
 metaForm.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -193,7 +217,10 @@ metaForm.addEventListener("submit", (e) => {
   if (lastUploadedVideo) preparePostPanel(lastUploadedVideo);
 });
 
-document.getElementById("post-facebook-btn").addEventListener("click", async () => {
+document.getElementById("post-facebook-btn").addEventListener("click", postFacebookNow);
+document.getElementById("post-instagram-btn").addEventListener("click", postInstagramNow);
+
+async function postFacebookNow() {
   const statusEl = document.getElementById("facebook-post-status");
   const fbPageId = document.getElementById("fbPageId").value.trim();
   const fbPageToken = document.getElementById("fbPageToken").value.trim();
@@ -208,9 +235,9 @@ document.getElementById("post-facebook-btn").addEventListener("click", async () 
   } catch (err) {
     statusEl.textContent = `Failed: ${err.message}`;
   }
-});
+}
 
-document.getElementById("post-instagram-btn").addEventListener("click", async () => {
+async function postInstagramNow() {
   const statusEl = document.getElementById("instagram-post-status");
   const fbPageToken = document.getElementById("fbPageToken").value.trim();
   const igAccountId = document.getElementById("igAccountId").value.trim();
@@ -233,7 +260,7 @@ document.getElementById("post-instagram-btn").addEventListener("click", async ()
   } catch (err) {
     statusEl.textContent = `Failed: ${err.message}`;
   }
-});
+}
 
 function restoreSavedInputs() {
   const savedKey = localStorage.getItem("yt_dashboard_apiKey");
