@@ -1,4 +1,6 @@
 const API_BASE = "https://www.googleapis.com/youtube/v3";
+const ANALYTICS_API_BASE = "https://youtubeanalytics.googleapis.com/v2";
+const YT_ANALYTICS_SCOPE = "https://www.googleapis.com/auth/yt-analytics.readonly";
 const MAX_VIDEOS = 25;
 
 const form = document.getElementById("connect-form");
@@ -6,6 +8,15 @@ const apiKeyInput = document.getElementById("apiKey");
 const channelInput = document.getElementById("channelInput");
 const errorEl = document.getElementById("error-message");
 const dashboard = document.getElementById("dashboard");
+const oauthSetup = document.getElementById("oauth-setup");
+const oauthForm = document.getElementById("oauth-form");
+const oauthClientIdInput = document.getElementById("oauthClientId");
+const oauthErrorEl = document.getElementById("oauth-error-message");
+const oauthStatusEl = document.getElementById("oauth-status");
+
+let currentChannel = null;
+let currentVideos = [];
+let tokenClient = null;
 
 restoreSavedInputs();
 
@@ -27,7 +38,11 @@ form.addEventListener("submit", async (e) => {
   try {
     const channel = await fetchChannel(apiKey, channelRaw);
     const videos = await fetchRecentVideos(apiKey, channel.uploadsPlaylistId);
+    currentChannel = channel;
+    currentVideos = videos;
     renderDashboard(channel, videos);
+    renderPromoteList(videos, channel);
+    oauthSetup.hidden = false;
   } catch (err) {
     showError(err.message || "Something went wrong. Check your API key and channel identifier.");
   } finally {
@@ -36,11 +51,49 @@ form.addEventListener("submit", async (e) => {
   }
 });
 
+oauthForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  hideOauthError();
+
+  const clientId = oauthClientIdInput.value.trim();
+  if (!clientId) return;
+  localStorage.setItem("yt_dashboard_oauth_client_id", clientId);
+
+  if (typeof google === "undefined" || !google.accounts || !google.accounts.oauth2) {
+    showOauthError("Google's sign-in script hasn't loaded yet (or is blocked). Check your connection and try again.");
+    return;
+  }
+
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: clientId,
+    scope: YT_ANALYTICS_SCOPE,
+    callback: async (response) => {
+      if (response.error) {
+        showOauthError(`Google sign-in failed: ${response.error}`);
+        return;
+      }
+      oauthStatusEl.hidden = false;
+      oauthStatusEl.textContent = "Connected. Loading watch hours...";
+      oauthStatusEl.classList.add("connected");
+      try {
+        await loadWatchHours(response.access_token);
+        oauthStatusEl.textContent = "Connected — watch hours below reflect your last sign-in.";
+      } catch (err) {
+        showOauthError(err.message || "Could not load watch hours.");
+      }
+    },
+  });
+
+  tokenClient.requestAccessToken();
+});
+
 function restoreSavedInputs() {
   const savedKey = localStorage.getItem("yt_dashboard_apiKey");
   const savedChannel = localStorage.getItem("yt_dashboard_channel");
+  const savedClientId = localStorage.getItem("yt_dashboard_oauth_client_id");
   if (savedKey) apiKeyInput.value = savedKey;
   if (savedChannel) channelInput.value = savedChannel;
+  if (savedClientId) oauthClientIdInput.value = savedClientId;
 }
 
 function showError(msg) {
@@ -50,6 +103,15 @@ function showError(msg) {
 
 function hideError() {
   errorEl.hidden = true;
+}
+
+function showOauthError(msg) {
+  oauthErrorEl.textContent = msg;
+  oauthErrorEl.hidden = false;
+}
+
+function hideOauthError() {
+  oauthErrorEl.hidden = true;
 }
 
 async function apiGet(path, params) {
@@ -116,6 +178,7 @@ async function fetchRecentVideos(apiKey, uploadsPlaylistId) {
     return {
       id: v.id,
       title: v.snippet.title,
+      description: v.snippet.description || "",
       publishedAt: new Date(v.snippet.publishedAt),
       views,
       likes,
@@ -123,6 +186,112 @@ async function fetchRecentVideos(apiKey, uploadsPlaylistId) {
       engagementRate,
     };
   });
+}
+
+async function loadWatchHours(accessToken) {
+  if (!currentChannel) throw new Error("Load your channel first.");
+
+  const end = new Date();
+  const start = new Date();
+  start.setDate(start.getDate() - 28);
+  const startDate = toISODate(start);
+  const endDate = toISODate(end);
+
+  const totals = await analyticsGet(accessToken, {
+    ids: `channel==${currentChannel.id}`,
+    startDate,
+    endDate,
+    metrics: "estimatedMinutesWatched,averageViewDuration,subscribersGained,subscribersLost,views",
+  });
+
+  const perVideo = await analyticsGet(accessToken, {
+    ids: `channel==${currentChannel.id}`,
+    startDate,
+    endDate,
+    metrics: "estimatedMinutesWatched,averageViewDuration,views",
+    dimensions: "video",
+    sort: "-views",
+    maxResults: "10",
+  });
+
+  document.getElementById("watch-hours-section").hidden = false;
+  renderWatchHours(totals, perVideo);
+}
+
+async function analyticsGet(accessToken, params) {
+  const url = new URL(`${ANALYTICS_API_BASE}/reports`);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString(), {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error?.message || `YouTube Analytics API error (${res.status})`);
+  }
+  return data;
+}
+
+function renderWatchHours(totals, perVideo) {
+  const statsEl = document.getElementById("watch-hours-stats");
+  const oppEl = document.getElementById("watch-hours-opportunities");
+  statsEl.innerHTML = "";
+  oppEl.innerHTML = "";
+
+  const row = totals.rows && totals.rows[0];
+  if (!row) {
+    oppEl.textContent = "No analytics data returned for the last 28 days.";
+    return;
+  }
+
+  const [minutesWatched, avgViewDurationSec, subsGained, subsLost, views] = row;
+  const hoursWatched = minutesWatched / 60;
+
+  const stats = [
+    ["Watch Hours", hoursWatched.toFixed(1)],
+    ["Avg. View Duration", formatDuration(avgViewDurationSec)],
+    ["Subscribers Gained", formatNumber(subsGained)],
+    ["Subscribers Lost", formatNumber(subsLost)],
+  ];
+  stats.forEach(([label, value]) => {
+    const card = document.createElement("div");
+    card.className = "stat-card";
+    card.innerHTML = `<span class="stat-label">${label}</span><span class="stat-value">${value}</span>`;
+    statsEl.appendChild(card);
+  });
+
+  const videoRows = (perVideo.rows || []).map((r) => {
+    const [videoId, minutes, avgDurSec, videoViews] = r;
+    const match = currentVideos.find((v) => v.id === videoId);
+    return {
+      title: match ? match.title : videoId,
+      minutes,
+      avgDurSec,
+      views: videoViews,
+    };
+  });
+
+  if (videoRows.length === 0) {
+    oppEl.textContent = "";
+    return;
+  }
+
+  const weakest = [...videoRows].sort((a, b) => a.avgDurSec - b.avgDurSec).slice(0, 3);
+  const lines = weakest.map(
+    (v) =>
+      `<li><strong>${escapeHtml(truncate(v.title, 60))}</strong> — ${formatNumber(v.views)} views but only ${formatDuration(v.avgDurSec)} average view duration. Check the retention graph in YouTube Studio for the exact drop-off point and re-cut your next video's opening around it.</li>`
+  );
+  oppEl.innerHTML = `<p><strong>Weakest retention among your most-viewed videos (last 28 days):</strong></p><ul>${lines.join("")}</ul>`;
+}
+
+function formatDuration(totalSeconds) {
+  const s = Math.round(totalSeconds || 0);
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  return `${m}:${String(rem).padStart(2, "0")}`;
+}
+
+function toISODate(d) {
+  return d.toISOString().slice(0, 10);
 }
 
 function renderDashboard(channel, videos) {
@@ -252,4 +421,128 @@ function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str;
   return div.innerHTML;
+}
+
+const PROMOTE_PLATFORMS = ["X / Twitter", "Instagram", "Facebook", "LinkedIn", "WhatsApp", "Reddit"];
+
+function renderPromoteList(videos, channel) {
+  const container = document.getElementById("promote-list");
+  container.innerHTML = "";
+
+  const recent = [...videos].sort((a, b) => b.publishedAt - a.publishedAt).slice(0, 5);
+  if (recent.length === 0) {
+    container.textContent = "No videos to promote yet.";
+    return;
+  }
+
+  recent.forEach((video) => {
+    const item = document.createElement("div");
+    item.className = "promote-item";
+
+    const titleEl = document.createElement("span");
+    titleEl.className = "promote-title";
+    titleEl.textContent = video.title;
+    item.appendChild(titleEl);
+
+    const tabsEl = document.createElement("div");
+    tabsEl.className = "promote-tabs";
+    const captionEl = document.createElement("div");
+    captionEl.className = "promote-caption";
+    const copyBtn = document.createElement("button");
+    copyBtn.className = "promote-copy-btn";
+    copyBtn.type = "button";
+    copyBtn.textContent = "Copy caption";
+
+    function selectPlatform(platform, tabEl) {
+      [...tabsEl.children].forEach((t) => t.classList.remove("active"));
+      tabEl.classList.add("active");
+      captionEl.textContent = generateCaption(platform, video, channel);
+      copyBtn.textContent = "Copy caption";
+      copyBtn.classList.remove("copied");
+    }
+
+    PROMOTE_PLATFORMS.forEach((platform, idx) => {
+      const tab = document.createElement("button");
+      tab.type = "button";
+      tab.className = "promote-tab";
+      tab.textContent = platform;
+      tab.addEventListener("click", () => selectPlatform(platform, tab));
+      tabsEl.appendChild(tab);
+      if (idx === 0) selectPlatform(platform, tab);
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(captionEl.textContent);
+        copyBtn.textContent = "Copied!";
+        copyBtn.classList.add("copied");
+      } catch {
+        copyBtn.textContent = "Select the text above to copy";
+      }
+    });
+
+    item.appendChild(tabsEl);
+    item.appendChild(captionEl);
+    item.appendChild(copyBtn);
+    container.appendChild(item);
+  });
+
+  const note = document.createElement("p");
+  note.className = "hint";
+  note.textContent =
+    "Note: subreddits generally require you to be an active, non-promotional community member (the common rule of thumb is roughly 9 helpful posts for every 1 self-promotional link) — check each subreddit's rules before posting.";
+  container.appendChild(note);
+}
+
+function generateCaption(platform, video, channel) {
+  const url = `https://youtu.be/${video.id}`;
+  const hashtags = generateHashtags(video.title);
+
+  switch (platform) {
+    case "X / Twitter": {
+      const tags = hashtags.slice(0, 2).map((h) => `#${h}`).join(" ");
+      return truncate(`${video.title}\n\n${url}\n\n${tags}`, 280);
+    }
+    case "Instagram": {
+      const tags = hashtags.slice(0, 8).map((h) => `#${h}`).join(" ");
+      return `${video.title}\n\nFull video is live now — link in bio.\n\n${tags}`;
+    }
+    case "Facebook":
+      return `New video: "${video.title}"\n\nWatch it here: ${url}\n\nWould love to hear what you think in the comments.`;
+    case "LinkedIn": {
+      const tags = hashtags.slice(0, 2).map((h) => `#${h}`).join(" ");
+      return `Just published: "${video.title}"\n\n${url}\n\n${tags}`;
+    }
+    case "WhatsApp":
+      return `Hey! Just posted a new video — "${video.title}". Check it out: ${url}`;
+    case "Reddit":
+      return `Title: ${video.title}\n\nLink: ${url}\n\n(Only post this where self-promotion is welcomed by the subreddit's rules, and prefer participating genuinely over just dropping links.)`;
+    default:
+      return `${video.title} ${url}`;
+  }
+}
+
+function generateHashtags(title) {
+  const stopwords = new Set([
+    "the", "and", "for", "with", "this", "that", "your", "you", "are", "how",
+    "what", "why", "from", "have", "just", "into", "over", "when", "who",
+    "was", "were", "will", "can", "not", "but", "all", "new",
+  ]);
+  const words = title
+    .replace(/[^\w\s]/g, "")
+    .split(/\s+/)
+    .filter((w) => w.length > 3 && !stopwords.has(w.toLowerCase()));
+
+  const seen = new Set();
+  const tags = [];
+  for (const w of words) {
+    const tag = w.charAt(0).toUpperCase() + w.slice(1);
+    const key = tag.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      tags.push(tag);
+    }
+    if (tags.length >= 6) break;
+  }
+  return tags;
 }

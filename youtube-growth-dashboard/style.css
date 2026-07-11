@@ -220,6 +220,83 @@ form button:hover { opacity: 0.9; }
 #cadence .good { color: var(--good); }
 #cadence .warn { color: var(--warn); }
 
+#oauth-status.connected { color: var(--good); }
+
+#watch-hours-opportunities {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.promote-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.promote-item {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.promote-item .promote-title {
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.promote-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.promote-tab {
+  background: #0d0f14;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.promote-tab.active {
+  background: var(--accent-2);
+  color: #0d0f14;
+  border-color: var(--accent-2);
+  font-weight: 600;
+}
+
+.promote-caption {
+  background: #0d0f14;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-size: 0.88rem;
+  white-space: pre-wrap;
+  margin-bottom: 0.6rem;
+}
+
+.promote-copy-btn {
+  background: transparent;
+  border: 1px solid var(--accent-2);
+  color: var(--accent-2);
+  border-radius: 8px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.promote-copy-btn:hover { background: rgba(62, 166, 255, 0.1); }
+.promote-copy-btn.copied { border-color: var(--good); color: var(--good); }
+
+@media (prefers-color-scheme: light) {
+  .promote-tab, .promote-caption { background: #f3f4f6; }
+}
+
 .checklist {
   padding-left: 1.1rem;
   display: flex;

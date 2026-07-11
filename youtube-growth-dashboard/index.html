@@ -30,11 +30,33 @@
       <input type="password" id="apiKey" placeholder="AIza..." autocomplete="off" required />
 
       <label for="channelInput">Channel Handle or Channel ID</label>
-      <input type="text" id="channelInput" placeholder="@yourhandle or UCxxxxxxxxxxxxxxxxxxxxxx" required />
+      <input type="text" id="channelInput" placeholder="@yourhandle or UCxxxxxxxxxxxxxxxxxxxxxx" value="@ehtishamsiddiqui123" required />
 
       <button type="submit">Load My Channel</button>
     </form>
     <p id="error-message" class="error" hidden></p>
+  </section>
+
+  <section id="oauth-setup" class="card" hidden>
+    <h2>2. Connect Google account for watch hours (optional)</h2>
+    <p>
+      View/like/comment counts are public, but watch time is private to you.
+      Seeing it requires you to sign in with Google and grant read-only access
+      to your own <a href="https://developers.google.com/youtube/analytics" target="_blank" rel="noopener">YouTube Analytics</a>.
+      Nothing is sent anywhere except Google's servers — this page has no backend.
+    </p>
+    <ol class="setup-steps">
+      <li>In the same Google Cloud project, go to "APIs &amp; Services &gt; Credentials" and create an <strong>OAuth 2.0 Client ID</strong> of type "Web application".</li>
+      <li>Add the URL you're opening this page from (e.g. <code>http://localhost:8000</code>) to "Authorized JavaScript origins".</li>
+      <li>Enable the "YouTube Analytics API" for the project.</li>
+    </ol>
+    <form id="oauth-form">
+      <label for="oauthClientId">OAuth Client ID</label>
+      <input type="text" id="oauthClientId" placeholder="xxxxxxxxxx.apps.googleusercontent.com" autocomplete="off" />
+      <button type="submit" id="oauth-connect-btn">Connect Google Account</button>
+    </form>
+    <p id="oauth-error-message" class="error" hidden></p>
+    <p id="oauth-status" class="hint" hidden></p>
   </section>
 
   <section id="dashboard" hidden>
@@ -57,6 +79,13 @@
       </div>
     </section>
 
+    <section id="watch-hours-section" class="card" hidden>
+      <h2>Watch hours (last 28 days)</h2>
+      <p class="hint">Requires Google sign-in above. This is the metric YouTube weighs most heavily for recommendations and monetization eligibility.</p>
+      <div class="stats-grid" id="watch-hours-stats"></div>
+      <div id="watch-hours-opportunities"></div>
+    </section>
+
     <section class="card">
       <h2>Recent video performance</h2>
       <p class="hint">Engagement rate = (likes + comments) / views. Videos below the dashed line are underperforming relative to your own channel average — they're your best opportunities.</p>
@@ -72,6 +101,12 @@
     <section class="card">
       <h2>Upload consistency</h2>
       <div id="cadence"></div>
+    </section>
+
+    <section class="card">
+      <h2>Share &amp; promote</h2>
+      <p class="hint">Ready-to-paste captions for each of your recent videos, generated locally from the title/description — no auto-posting, you copy and paste it yourself on each platform.</p>
+      <div id="promote-list" class="promote-list"></div>
     </section>
   </section>
 
@@ -95,6 +130,7 @@
   <p>Data source: YouTube Data API v3. No engagement is purchased, automated, or faked — this tool only analyzes your real numbers and suggests content improvements.</p>
 </footer>
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="app.js"></script>
 </body>
 </html>
