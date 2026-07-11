@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>YouTube Channel Growth Dashboard</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header>
+  <h1>YouTube Channel Growth Dashboard</h1>
+  <p class="subtitle">Real analytics from your channel, plus concrete suggestions for earning more likes and subscribers organically.</p>
+</header>
+
+<main>
+  <section id="setup" class="card">
+    <h2>1. Connect your channel</h2>
+    <p>
+      This runs entirely in your browser using the official
+      <a href="https://developers.google.com/youtube/v3" target="_blank" rel="noopener">YouTube Data API v3</a>.
+      Your API key is stored only in your browser's local storage and is sent directly to Google's API — never to any third-party server.
+    </p>
+    <ol class="setup-steps">
+      <li>Go to the <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener">Google Cloud Console</a>, create/select a project, and enable the "YouTube Data API v3".</li>
+      <li>Create an API key under Credentials (restrict it to the YouTube Data API for safety).</li>
+      <li>Find your channel's handle (e.g. <code>@yourhandle</code>) or channel ID from your channel's "About" page.</li>
+    </ol>
+    <form id="connect-form">
+      <label for="apiKey">YouTube Data API Key</label>
+      <input type="password" id="apiKey" placeholder="AIza..." autocomplete="off" required />
+
+      <label for="channelInput">Channel Handle or Channel ID</label>
+      <input type="text" id="channelInput" placeholder="@yourhandle or UCxxxxxxxxxxxxxxxxxxxxxx" required />
+
+      <button type="submit">Load My Channel</button>
+    </form>
+    <p id="error-message" class="error" hidden></p>
+  </section>
+
+  <section id="dashboard" hidden>
+    <section class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-label">Subscribers</span>
+        <span class="stat-value" id="stat-subs">—</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Total Views</span>
+        <span class="stat-value" id="stat-views">—</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Videos</span>
+        <span class="stat-value" id="stat-videos">—</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Avg. Engagement Rate</span>
+        <span class="stat-value" id="stat-engagement">—</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Recent video performance</h2>
+      <p class="hint">Engagement rate = (likes + comments) / views. Videos below the dashed line are underperforming relative to your own channel average — they're your best opportunities.</p>
+      <div id="chart" class="chart"></div>
+    </section>
+
+    <section class="card">
+      <h2>Opportunities to improve likes &amp; subscribers</h2>
+      <p class="hint">Generated from your actual video data — no bots, no purchased engagement, just what the numbers say to fix.</p>
+      <ul id="opportunities" class="opportunities"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Upload consistency</h2>
+      <div id="cadence"></div>
+    </section>
+  </section>
+
+  <section class="card">
+    <h2>Growth checklist</h2>
+    <p class="hint">Tactics that reliably move likes and subscribers — all within YouTube's terms of service.</p>
+    <ul class="checklist">
+      <li><strong>Ask explicitly, once.</strong> A short, specific call-to-action ("if this helped, hit like — it takes one second") near a payoff moment in the video outperforms generic outros.</li>
+      <li><strong>Hook in the first 15 seconds.</strong> State the payoff up front; retention in the opening seconds is the single biggest driver of how widely YouTube distributes a video.</li>
+      <li><strong>Thumbnail + title as a pair.</strong> The thumbnail should show a moment or emotion, the title should create a question — together they should promise one clear thing.</li>
+      <li><strong>Pin a comment.</strong> Pin a question related to the video to prompt replies; comments boost the video in recommendations.</li>
+      <li><strong>Use end screens and cards.</strong> Point to your next-best video, not just "subscribe" — that keeps session time up, which YouTube rewards.</li>
+      <li><strong>Post on a consistent schedule.</strong> Even one video every two weeks, always on the same day, trains the algorithm and your audience.</li>
+      <li><strong>Use the Community tab</strong> between uploads to keep subscribers engaged without needing a full video.</li>
+      <li><strong>Study your Audience Retention graphs</strong> (YouTube Studio &gt; Analytics &gt; Engagement) for the exact timestamp viewers drop off, and fix that moment in your next edit.</li>
+    </ul>
+  </section>
+</main>
+
+<footer>
+  <p>Data source: YouTube Data API v3. No engagement is purchased, automated, or faked — this tool only analyzes your real numbers and suggests content improvements.</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

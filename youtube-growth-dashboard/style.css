@@ -1,0 +1,248 @@
+:root {
+  --bg: #0f1115;
+  --card-bg: #171a21;
+  --border: #2a2e38;
+  --text: #e8eaed;
+  --text-dim: #9aa0ac;
+  --accent: #ff4d4f;
+  --accent-2: #3ea6ff;
+  --good: #3ecf8e;
+  --warn: #f5a623;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+header {
+  padding: 2.5rem 1.5rem 1.5rem;
+  text-align: center;
+}
+
+header h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.8rem;
+}
+
+.subtitle {
+  color: var(--text-dim);
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+main {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 0 1.5rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.card h2 {
+  margin-top: 0;
+  font-size: 1.15rem;
+}
+
+.hint {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+a { color: var(--accent-2); }
+
+.setup-steps {
+  color: var(--text-dim);
+  font-size: 0.92rem;
+}
+
+form#connect-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 420px;
+}
+
+form label {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+form input {
+  background: #0d0f14;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+form button {
+  margin-top: 0.5rem;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem 1rem;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+form button:hover { opacity: 0.9; }
+
+.error {
+  color: var(--accent);
+  font-size: 0.9rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.stat-label {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stat-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 180px;
+  padding-top: 1rem;
+  position: relative;
+  overflow-x: auto;
+}
+
+.chart .avg-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--text-dim);
+}
+
+.chart-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 4px;
+  min-width: 28px;
+  flex: 1 0 auto;
+}
+
+.chart-bar {
+  width: 18px;
+  border-radius: 4px 4px 0 0;
+  background: var(--accent-2);
+  transition: height 0.3s ease;
+}
+
+.chart-bar.under-avg { background: var(--warn); }
+
+.chart-label {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  max-height: 60px;
+  overflow: hidden;
+}
+
+.opportunities {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.opportunities li {
+  border-left: 3px solid var(--warn);
+  padding: 0.5rem 0.9rem;
+  background: #0d0f14;
+  border-radius: 0 8px 8px 0;
+}
+
+.opportunities .video-title {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.opportunities .video-meta {
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.opportunities .suggestion {
+  font-size: 0.88rem;
+}
+
+#cadence { font-size: 0.92rem; }
+#cadence .good { color: var(--good); }
+#cadence .warn { color: var(--warn); }
+
+.checklist {
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  font-size: 0.92rem;
+}
+
+footer {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  padding: 1.5rem;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f7f8fa;
+    --card-bg: #ffffff;
+    --border: #e2e5ea;
+    --text: #16181d;
+    --text-dim: #5b616e;
+  }
+  form input { background: #ffffff; }
+  .opportunities li { background: #f3f4f6; }
+}
