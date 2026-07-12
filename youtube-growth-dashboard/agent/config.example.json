@@ -1,0 +1,17 @@
+{
+  "youtube": {
+    "clientId": "xxxxxxxxxx.apps.googleusercontent.com",
+    "clientSecret": "xxxxxxxxxx",
+    "refreshToken": "obtained by running: node auth.js"
+  },
+  "facebook": {
+    "pageId": "",
+    "pageAccessToken": ""
+  },
+  "instagram": {
+    "businessAccountId": ""
+  },
+  "autoPublish": false,
+  "watchFolder": "./inbox",
+  "doneFolder": "./done"
+}

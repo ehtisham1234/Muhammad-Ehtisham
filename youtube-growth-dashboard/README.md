@@ -6,6 +6,10 @@ turns them into concrete, honest suggestions for earning more likes and
 subscribers — no bots, no purchased engagement, nothing that risks your
 channel's standing with YouTube.
 
+Prefer no button-clicking at all? See [`agent/`](agent/) for an unattended,
+cron-driven version of the upload + share pipeline — drop a video in a
+folder and it handles the rest on your own schedule.
+
 ## What it does
 
 - Pulls subscriber count, total views, and video count for your channel.
