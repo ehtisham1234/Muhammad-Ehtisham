@@ -29,11 +29,17 @@ async function main() {
     return;
   }
 
+  await approveAndPublish(videoId);
+}
+
+async function approveAndPublish(videoId, { expectedToken } = {}) {
   const pending = readJsonSafe(PENDING_PATH, {});
   const entry = pending[videoId];
   if (!entry) {
-    console.error(`No pending entry for ${videoId}. Run 'node publish.js' with no arguments to list pending videos.`);
-    process.exit(1);
+    throw new Error(`No pending entry for ${videoId}.`);
+  }
+  if (expectedToken !== undefined && entry.approveToken !== expectedToken) {
+    throw new Error("Invalid or expired approval token.");
   }
 
   const config = loadConfig();
@@ -44,13 +50,16 @@ async function main() {
 
   const fb = config.facebook || {};
   const ig = config.instagram || {};
+  const results = { facebook: null, instagram: null };
 
   if (fb.pageId && fb.pageAccessToken) {
     try {
       await postToFacebookPage(fb.pageId, fb.pageAccessToken, entry.facebookMessage, entry.watchUrl);
       log("Posted to Facebook Page.");
+      results.facebook = "posted";
     } catch (err) {
       log("Facebook post failed:", err.message || err);
+      results.facebook = `failed: ${err.message || err}`;
     }
   }
 
@@ -58,13 +67,17 @@ async function main() {
     try {
       await postReelToInstagram(ig.businessAccountId, fb.pageAccessToken, entry.instagramVideoUrl, entry.instagramCaption);
       log("Posted to Instagram.");
+      results.instagram = "posted";
     } catch (err) {
       log("Instagram post failed:", err.message || err);
+      results.instagram = `failed: ${err.message || err}`;
     }
   }
 
   delete pending[videoId];
   writeJson(PENDING_PATH, pending);
+
+  return { entry, results };
 }
 
 if (require.main === module) {
@@ -74,4 +87,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { main };
+module.exports = { main, approveAndPublish };

@@ -10,6 +10,8 @@ const {
   postReelToInstagram,
   generateFacebookMessage,
   generateInstagramCaption,
+  generateApproveToken,
+  sendReviewEmail,
   log,
 } = require("./lib");
 
@@ -60,7 +62,6 @@ async function processVideo(config, watchFolder, doneFolder, file, pending) {
   const title = sidecar.title || base;
   const description = sidecar.description || "";
   const tags = sidecar.tags || [];
-  const explicitPublic = sidecar.privacyStatus === "public";
   const privacyStatus = sidecar.privacyStatus || (config.autoPublish ? "public" : "unlisted");
 
   const accessToken = await getAccessToken(config.youtube);
@@ -72,12 +73,16 @@ async function processVideo(config, watchFolder, doneFolder, file, pending) {
   const watchUrl = `https://youtu.be/${result.id}`;
   log("Uploaded as", privacyStatus, "-", watchUrl);
 
-  const shouldAutoPost = config.autoPublish || explicitPublic;
+  // Social posting is tied to the video actually being public — a video
+  // forced to "unlisted" (e.g. by generate-video.js for the Islamic
+  // category) must never get promoted, regardless of the global
+  // autoPublish setting.
+  const shouldAutoPost = privacyStatus === "public";
 
   if (shouldAutoPost) {
     await runSocialPosts(config, sidecar, title, watchUrl);
   } else {
-    pending[result.id] = {
+    const entry = {
       title,
       watchUrl,
       sourceFile: file,
@@ -85,8 +90,18 @@ async function processVideo(config, watchFolder, doneFolder, file, pending) {
       instagramCaption: sidecar.instagramCaption || generateInstagramCaption(title),
       instagramVideoUrl: sidecar.instagramVideoUrl || "",
       addedAt: new Date().toISOString(),
+      approveToken: generateApproveToken(),
     };
+    pending[result.id] = entry;
     log("Uploaded unlisted, awaiting review. Run: node publish.js", result.id);
+
+    if (config.email && config.email.smtpHost) {
+      try {
+        await sendReviewEmail(config, result.id, entry);
+      } catch (err) {
+        log("Could not send review email:", err.message || err);
+      }
+    }
   }
 
   fs.renameSync(filePath, path.join(doneFolder, file));

@@ -19,12 +19,39 @@ live only in `config.json` on whatever machine you run this on.
 4. Depending on `autoPublish` in `config.json`:
    - `false` (default, recommended): uploads as **unlisted** and queues it
      in `pending.json`. Nothing is posted to Facebook/Instagram yet. You
-     review with `node publish.js` (lists pending videos) and
-     `node publish.js <videoId>` (makes it public and posts it).
+     review with `node publish.js` (lists pending videos), `node publish.js
+     <videoId>` (makes it public and posts it), or — if email is
+     configured — click "Approve & Publish" in the email you get (see
+     below).
    - `true`: uploads as **public** and immediately posts to your configured
      Facebook Page / Instagram, no review step.
 5. Moves the processed file (and its sidecar) into `done/` and records it
    in `processed.json` so it's never re-processed.
+
+### Optional: `generate-video.js` — full content, not just upload
+
+`node generate-video.js <islamic|funny|motivational>` writes a complete,
+ready-to-upload video into `inbox/` from nothing: it asks Claude for a short
+script, converts it to speech (`espeak-ng`), lays it over a title card
+(`ffmpeg`), and drops the result — video + sidecar — where `agent.js` will
+pick it up. Combine the two in cron and you get three unattended uploads a
+day with zero manual steps (see the cron block below).
+
+**The `islamic` category is hard-coded to always require review.** Its
+sidecar always sets `privacyStatus: "unlisted"`, which overrides
+`autoPublish` — even in fully unattended mode, a religious-themed video
+never goes public or gets shared without a human looking at it first. This
+isn't configurable, on purpose: the script generator is explicitly
+instructed never to invent a specific Quran ayah or Hadith citation, and the
+output is scanned for citation-shaped text before it's even written to
+disk, but AI-generated text can still be wrong in ways that matter more for
+religious content than for a joke or a pep talk — so it always gets a human
+check. `funny` and `motivational` follow the normal `autoPublish` rule.
+
+Requires `anthropic.apiKey` in `config.json` (from
+[console.anthropic.com](https://console.anthropic.com)) — this is billed
+per request, at Claude's standard API rates, separately from anything else
+in this repo.
 
 ## One-time setup
 
@@ -51,7 +78,10 @@ live only in `config.json` on whatever machine you run this on.
    post to a Page/account **you** administer.
 5. Decide on `autoPublish`: leave it `false` to keep a review step, or set
    `true` for fully unattended publishing (only do this once you trust the
-   pipeline — start with `false`).
+   pipeline — start with `false`). Note that `generate-video.js` overrides
+   this for the `islamic` category regardless (see above).
+6. `npm install` (installs the Anthropic SDK and `nodemailer` used by the
+   optional pieces below).
 
 ## Running it
 
@@ -73,6 +103,67 @@ Add a crontab entry to run it, say, every 15 minutes:
 That's the actual "runs by itself" part: put a finished video + sidecar
 JSON into `inbox/`, and within 15 minutes it's uploaded (and, depending on
 `autoPublish`, posted) with zero manual steps beyond the initial file drop.
+
+### Full cycle: 3 auto-generated videos a day
+
+Combine `generate-video.js` with `agent.js` to go from nothing to an
+uploaded video with no file to drop in yourself:
+
+```
+# Morning Islamic reminder, evening comedy, night motivational — then upload
+0 7  * * * cd /path/to/agent && /usr/bin/node generate-video.js islamic      >> generate.log 2>&1
+0 18 * * * cd /path/to/agent && /usr/bin/node generate-video.js funny        >> generate.log 2>&1
+0 22 * * * cd /path/to/agent && /usr/bin/node generate-video.js motivational >> generate.log 2>&1
+
+# Run shortly after each generation to pick up what's new
+15 7  * * * cd /path/to/agent && /usr/bin/node agent.js >> agent.log 2>&1
+15 18 * * * cd /path/to/agent && /usr/bin/node agent.js >> agent.log 2>&1
+15 22 * * * cd /path/to/agent && /usr/bin/node agent.js >> agent.log 2>&1
+```
+
+Adjust the hours to your own timezone/schedule — these are just examples,
+not fixed prayer or "correct" upload times.
+
+## Optional: email review with a one-click approve link
+
+Instead of SSH-ing in to run `node publish.js <id>`, get an email for every
+video that lands in the review queue with an **Approve & Publish** button.
+Clicking it makes the video public and posts it to your configured
+Facebook/Instagram — the same thing `publish.js` does, just reachable from
+your phone.
+
+1. Fill in `email` in `config.json` — for Gmail, use an
+   [App Password](https://myaccount.google.com/apppasswords) as
+   `smtpPass`, not your real password.
+2. Set `publicBaseUrl` to wherever `approve-server.js` will be reachable
+   from — see below.
+3. Run the approve server as a **persistent process** (not cron — it needs
+   to be listening whenever you might click the link):
+   ```
+   node approve-server.js
+   ```
+   In production, run it under something that restarts it on crash/reboot
+   — `pm2 start approve-server.js`, a `systemd` unit, or a Docker
+   restart policy all work.
+
+**On `publicBaseUrl`:** the click has to reach this machine over the
+network.
+- Running on a VPS/server with a public IP or domain already? Point
+  `publicBaseUrl` at that (put it behind a reverse proxy with HTTPS if you
+  can — e.g. Caddy or nginx with Let's Encrypt).
+- Running on a laptop with no public address? Use a tunnel like
+  [ngrok](https://ngrok.com) (`ngrok http 8934`, free tier is enough) and
+  set `publicBaseUrl` to the `https://...ngrok...` URL it gives you. Note
+  free ngrok URLs change on restart — update `publicBaseUrl` if you restart
+  the tunnel.
+
+**Security note on the approve link:** each pending video gets its own
+random 48-character token (`approveToken` in `pending.json`), and the link
+is only ever sent to the email address you configured. The token is
+single-use — once a video is approved, its pending entry is deleted, so the
+same link can't be replayed. Anyone who gets hold of the link before you
+approve it could publish that one video early, so treat it like you would
+any other unsubscribe/magic-sign-in link in your inbox — don't forward it.
 
 ## Metadata sidecar format
 

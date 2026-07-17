@@ -3,3 +3,4 @@ processed.json
 pending.json
 inbox/
 done/
+node_modules/

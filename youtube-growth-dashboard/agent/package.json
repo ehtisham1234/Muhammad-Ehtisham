@@ -9,6 +9,12 @@
   "scripts": {
     "auth": "node auth.js",
     "run": "node agent.js",
-    "publish": "node publish.js"
+    "publish": "node publish.js",
+    "generate": "node generate-video.js",
+    "approve-server": "node approve-server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.112.3",
+    "nodemailer": "^9.0.3"
   }
 }

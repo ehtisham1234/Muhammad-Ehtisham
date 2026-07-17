@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const CONFIG_PATH = path.join(__dirname, "config.json");
 const UPLOAD_API_BASE = "https://www.googleapis.com/upload/youtube/v3/videos";
@@ -166,6 +167,47 @@ function log(...args) {
   console.log(`[${new Date().toISOString()}]`, ...args);
 }
 
+function generateApproveToken() {
+  return crypto.randomBytes(24).toString("hex");
+}
+
+async function sendReviewEmail(config, videoId, entry) {
+  if (!config.email || !config.email.smtpHost) return;
+
+  const nodemailer = require("nodemailer");
+  const transporter = nodemailer.createTransport({
+    host: config.email.smtpHost,
+    port: config.email.smtpPort || 587,
+    secure: !!config.email.smtpSecure,
+    auth: { user: config.email.smtpUser, pass: config.email.smtpPass },
+  });
+
+  const approveUrl = `${config.publicBaseUrl.replace(/\/$/, "")}/approve/${videoId}?token=${entry.approveToken}`;
+
+  await transporter.sendMail({
+    from: config.email.from || config.email.smtpUser,
+    to: config.email.to,
+    subject: `Review needed: "${entry.title}"`,
+    text: `A new video is waiting for your review.\n\nTitle: ${entry.title}\nWatch (unlisted): ${entry.watchUrl}\n\nApprove and publish (makes it public + posts to Facebook/Instagram):\n${approveUrl}\n\nIf this wasn't you, ignore this email — the video stays unlisted until approved.`,
+    html: `
+      <p>A new video is waiting for your review.</p>
+      <p><strong>Title:</strong> ${escapeHtml(entry.title)}<br/>
+      <strong>Watch (unlisted):</strong> <a href="${entry.watchUrl}">${entry.watchUrl}</a></p>
+      <p><a href="${approveUrl}" style="display:inline-block;padding:12px 20px;background:#ff4d4f;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold;">Approve &amp; Publish</a></p>
+      <p style="color:#888;font-size:0.85em;">This makes the video public and posts it to your configured Facebook Page / Instagram. If this wasn't you, ignore this email — the video stays unlisted until approved.</p>
+    `,
+  });
+  log("Sent review email for", videoId);
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 module.exports = {
   CONFIG_PATH,
   loadConfig,
@@ -178,6 +220,8 @@ module.exports = {
   postReelToInstagram,
   generateFacebookMessage,
   generateInstagramCaption,
+  generateApproveToken,
+  sendReviewEmail,
   sleep,
   log,
 };
