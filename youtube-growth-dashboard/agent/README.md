@@ -104,25 +104,26 @@ That's the actual "runs by itself" part: put a finished video + sidecar
 JSON into `inbox/`, and within 15 minutes it's uploaded (and, depending on
 `autoPublish`, posted) with zero manual steps beyond the initial file drop.
 
-### Full cycle: 3 auto-generated videos a day
+### Full cycle: auto-generated motivational video
 
 Combine `generate-video.js` with `agent.js` to go from nothing to an
-uploaded video with no file to drop in yourself:
+uploaded video with no file to drop in yourself. This channel only wants
+**motivational** content, so `generate-video.js` defaults to that category —
+you don't even pass an argument:
 
 ```
-# Morning Islamic reminder, evening comedy, night motivational — then upload
-0 7  * * * cd /path/to/agent && /usr/bin/node generate-video.js islamic      >> generate.log 2>&1
-0 18 * * * cd /path/to/agent && /usr/bin/node generate-video.js funny        >> generate.log 2>&1
-0 22 * * * cd /path/to/agent && /usr/bin/node generate-video.js motivational >> generate.log 2>&1
-
-# Run shortly after each generation to pick up what's new
-15 7  * * * cd /path/to/agent && /usr/bin/node agent.js >> agent.log 2>&1
-15 18 * * * cd /path/to/agent && /usr/bin/node agent.js >> agent.log 2>&1
-15 22 * * * cd /path/to/agent && /usr/bin/node agent.js >> agent.log 2>&1
+# One motivational video a day at 9am, uploaded 15 min later
+0 9  * * * cd /path/to/agent && /usr/bin/node generate-video.js >> generate.log 2>&1
+15 9 * * * cd /path/to/agent && /usr/bin/node agent.js          >> agent.log 2>&1
 ```
 
-Adjust the hours to your own timezone/schedule — these are just examples,
-not fixed prayer or "correct" upload times.
+Want more than one a day? Add more `generate-video.js` lines at different
+hours (each run makes a fresh video). Adjust the hours to your own timezone —
+these are just examples.
+
+> The `islamic` and `funny` categories still exist in the code, but you'd
+> have to ask for them explicitly (`node generate-video.js funny`). Left as
+> the default, every generated video is motivational.
 
 ## Optional: email review with a one-click approve link
 

@@ -5,11 +5,14 @@ const { generateScript } = require("./script-gen");
 const { textToSpeech, assembleVideo } = require("./media");
 
 const VALID_CATEGORIES = ["islamic", "funny", "motivational"];
+const DEFAULT_CATEGORY = "motivational";
 
 async function main() {
-  const category = process.argv[2];
+  // Default to motivational — that's the only category this channel wants.
+  // The other categories still work if explicitly passed as an argument.
+  const category = process.argv[2] || DEFAULT_CATEGORY;
   if (!VALID_CATEGORIES.includes(category)) {
-    console.error(`Usage: node generate-video.js <${VALID_CATEGORIES.join("|")}>`);
+    console.error(`Usage: node generate-video.js [${VALID_CATEGORIES.join("|")}]  (default: ${DEFAULT_CATEGORY})`);
     process.exit(1);
   }
 
