@@ -1,0 +1,30 @@
+{
+  "youtube": {
+    "clientId": "xxxxxxxxxx.apps.googleusercontent.com",
+    "clientSecret": "xxxxxxxxxx",
+    "refreshToken": "obtained by running: node auth.js"
+  },
+  "facebook": {
+    "pageId": "",
+    "pageAccessToken": ""
+  },
+  "instagram": {
+    "businessAccountId": ""
+  },
+  "anthropic": {
+    "apiKey": "sk-ant-... (only needed for generate-video.js)"
+  },
+  "email": {
+    "smtpHost": "smtp.gmail.com",
+    "smtpPort": 587,
+    "smtpSecure": false,
+    "smtpUser": "you@gmail.com",
+    "smtpPass": "app-password, not your real password",
+    "from": "you@gmail.com",
+    "to": "you@gmail.com"
+  },
+  "publicBaseUrl": "https://your-tunnel-or-domain.example.com",
+  "autoPublish": false,
+  "watchFolder": "./inbox",
+  "doneFolder": "./done"
+}

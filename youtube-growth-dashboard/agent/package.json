@@ -1,0 +1,20 @@
+{
+  "name": "youtube-growth-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Unattended cron-driven pipeline: watch a folder, upload new videos to YouTube, optionally post to your own Facebook Page / Instagram.",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "auth": "node auth.js",
+    "run": "node agent.js",
+    "publish": "node publish.js",
+    "generate": "node generate-video.js",
+    "approve-server": "node approve-server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.112.3",
+    "nodemailer": "^9.0.3"
+  }
+}

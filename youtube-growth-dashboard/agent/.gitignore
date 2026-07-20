@@ -1,0 +1,8 @@
+config.json
+processed.json
+pending.json
+inbox/
+done/
+scripts/
+scripts-done/
+node_modules/
