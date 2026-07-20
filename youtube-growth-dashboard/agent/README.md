@@ -28,14 +28,53 @@ live only in `config.json` on whatever machine you run this on.
 5. Moves the processed file (and its sidecar) into `done/` and records it
    in `processed.json` so it's never re-processed.
 
-### Optional: `generate-video.js` — full content, not just upload
+### `script-to-video.js` — free path, you supply the script
 
-`node generate-video.js <islamic|funny|motivational>` writes a complete,
-ready-to-upload video into `inbox/` from nothing: it asks Claude for a short
-script, converts it to speech (`espeak-ng`), lays it over a title card
-(`ffmpeg`), and drops the result — video + sidecar — where `agent.js` will
-pick it up. Combine the two in cron and you get three unattended uploads a
-day with zero manual steps (see the cron block below).
+**This is the no-cost way to get AI-voiced videos.** Write your own script
+in a plain text file, drop it in `scripts/`, and this turns it into a
+motivational video — no Anthropic API key, no billing, nothing to buy. It
+uses only free local tools (`espeak-ng` for the voice, `ffmpeg` for the
+video).
+
+1. Create a `.txt` file in the `scripts/` folder (a ready-made template is
+   in `script.example.txt` — copy it to `scripts/day1.txt` and edit). The
+   **first line is the title**; everything below it is the narration that
+   gets spoken:
+   ```
+   Show Up Again Tomorrow
+   Tags: motivation, discipline, mindset
+
+   Today was hard, and that is completely okay. Rest tonight without guilt.
+   Tomorrow, show up again, one honest step at a time.
+   ```
+   The `Tags:` line is optional — leave it out and tags are derived from the
+   title.
+2. Run it:
+   ```
+   node script-to-video.js
+   ```
+   Every `.txt` in `scripts/` becomes a video in `inbox/`; the used script
+   is moved to `scripts-done/` so it's never reused.
+3. `node agent.js` uploads it (or let cron do both — see below).
+
+### Optional (paid): `generate-video.js` — writes the script too
+
+`node generate-video.js` (defaults to motivational) does the same thing but
+*also writes the script for you* via Claude, so you don't supply any text.
+This is the only piece that needs `anthropic.apiKey` in `config.json` (from
+[console.anthropic.com](https://console.anthropic.com)) and is billed per
+request. If you'd rather not pay, use `script-to-video.js` above instead —
+same video output, you just provide the words.
+
+**The `islamic` category (generate-video.js only) is hard-coded to always
+require review.** Its sidecar always sets `privacyStatus: "unlisted"`, which
+overrides `autoPublish` — even in fully unattended mode, a religious-themed
+video never goes public without a human looking at it first. This isn't
+configurable, on purpose: the generator is instructed never to invent a
+specific Quran ayah or Hadith citation, and the output is scanned for
+citation-shaped text before use, but AI text can still be wrong in ways that
+matter more for religious content than for a pep talk — so it always gets a
+human check.
 
 **The `islamic` category is hard-coded to always require review.** Its
 sidecar always sets `privacyStatus: "unlisted"`, which overrides
@@ -104,26 +143,24 @@ That's the actual "runs by itself" part: put a finished video + sidecar
 JSON into `inbox/`, and within 15 minutes it's uploaded (and, depending on
 `autoPublish`, posted) with zero manual steps beyond the initial file drop.
 
-### Full cycle: auto-generated motivational video
+### Full cycle: your daily script → video → upload (free)
 
-Combine `generate-video.js` with `agent.js` to go from nothing to an
-uploaded video with no file to drop in yourself. This channel only wants
-**motivational** content, so `generate-video.js` defaults to that category —
-you don't even pass an argument:
+Keep a `.txt` script ready in `scripts/`, and cron turns it into a video and
+uploads it with no manual steps:
 
 ```
-# One motivational video a day at 9am, uploaded 15 min later
-0 9  * * * cd /path/to/agent && /usr/bin/node generate-video.js >> generate.log 2>&1
-15 9 * * * cd /path/to/agent && /usr/bin/node agent.js          >> agent.log 2>&1
+# Every day at 9am: turn today's script into a video, upload 15 min later
+0 9  * * * cd /path/to/agent && /usr/bin/node script-to-video.js >> generate.log 2>&1
+15 9 * * * cd /path/to/agent && /usr/bin/node agent.js           >> agent.log 2>&1
 ```
 
-Want more than one a day? Add more `generate-video.js` lines at different
-hours (each run makes a fresh video). Adjust the hours to your own timezone —
-these are just examples.
+Just drop a new `scripts/whatever.txt` before 9am each day and the rest is
+automatic. If no script is waiting, `script-to-video.js` does nothing and
+exits cleanly. Adjust the hours to your own timezone.
 
-> The `islamic` and `funny` categories still exist in the code, but you'd
-> have to ask for them explicitly (`node generate-video.js funny`). Left as
-> the default, every generated video is motivational.
+> Prefer the video's *script* to be auto-written too (paid)? Swap
+> `script-to-video.js` for `generate-video.js` in the first cron line — that
+> needs an Anthropic API key. Everything else stays the same.
 
 ## Optional: email review with a one-click approve link
 
