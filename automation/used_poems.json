@@ -1,10 +1,10 @@
 {
-  "notes": "Track poems already posted so the recurring generation routine never repeats one. Each entry's text should be verified (web search) before use, matching the accuracy bar used for this first batch.",
+  "notes": "Track poems already posted so the recurring generation routine never repeats one. Each entry's text should be verified (web search) before use, matching the accuracy bar used for this first batch. Posting pattern: YouTube first, then Facebook+TikTok as a separate post ~30 min later (per user instruction).",
   "posted": [
-    {"poet": "Mirza Ghalib", "opening_line": "Hazaron khwahishen aisi ke har khwahish pe dam nikle", "scheduled_for": "2026-09-26T03:40 (posted immediately on request)", "metricool_post_id": 382274616},
-    {"poet": "Rumi (trans. Whinfield)", "opening_line": "Hearken to the reed-flute, how it complains", "scheduled_for": "2026-09-27", "metricool_post_id": 382272319},
-    {"poet": "Allama Iqbal", "opening_line": "Khudi ko kar buland itna ke har taqdeer se pehle", "scheduled_for": "2026-09-28", "metricool_post_id": 382272353},
-    {"poet": "Mir Taqi Mir", "opening_line": "Patta patta boota boota haal hamara jaane hai", "scheduled_for": "2026-09-29", "metricool_post_id": 382272383},
-    {"poet": "Hasrat Mohani", "opening_line": "Chupke chupke raat din aansu bahana yaad hai", "scheduled_for": "2026-09-30", "metricool_post_id": 382272410}
+    {"poet": "Mirza Ghalib", "opening_line": "Hazaron khwahishen aisi ke har khwahish pe dam nikle", "youtube_at": "2026-09-26T03:40", "fb_tiktok_at": "2026-09-26T04:10", "metricool_post_ids": {"youtube": 382275219, "fb_tiktok": 382275388}},
+    {"poet": "Rumi (trans. Whinfield)", "opening_line": "Hearken to the reed-flute, how it complains", "youtube_at": "2026-09-27T18:00", "fb_tiktok_at": "2026-09-27T18:30", "metricool_post_ids": {"youtube": 382275271, "fb_tiktok": 382275417}},
+    {"poet": "Allama Iqbal", "opening_line": "Khudi ko kar buland itna ke har taqdeer se pehle", "youtube_at": "2026-09-28T18:00", "fb_tiktok_at": "2026-09-28T18:30", "metricool_post_ids": {"youtube": 382275317, "fb_tiktok": 382275440}},
+    {"poet": "Mir Taqi Mir", "opening_line": "Patta patta boota boota haal hamara jaane hai", "youtube_at": "2026-09-29T18:00", "fb_tiktok_at": "2026-09-29T18:30", "metricool_post_ids": {"youtube": 382275333, "fb_tiktok": 382275460}},
+    {"poet": "Hasrat Mohani", "opening_line": "Chupke chupke raat din aansu bahana yaad hai", "youtube_at": "2026-09-30T18:00", "fb_tiktok_at": "2026-09-30T18:30", "metricool_post_ids": {"youtube": 382275353, "fb_tiktok": 382275484}}
   ]
 }
