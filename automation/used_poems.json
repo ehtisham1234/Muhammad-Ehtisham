@@ -1,7 +1,7 @@
 {
   "notes": "Track poems already posted so the recurring generation routine never repeats one. Each entry's text should be verified (web search) before use, matching the accuracy bar used for this first batch.",
   "posted": [
-    {"poet": "Mirza Ghalib", "opening_line": "Hazaron khwahishen aisi ke har khwahish pe dam nikle", "scheduled_for": "2026-09-26", "metricool_post_id": 382272220},
+    {"poet": "Mirza Ghalib", "opening_line": "Hazaron khwahishen aisi ke har khwahish pe dam nikle", "scheduled_for": "2026-09-26T03:40 (posted immediately on request)", "metricool_post_id": 382274616},
     {"poet": "Rumi (trans. Whinfield)", "opening_line": "Hearken to the reed-flute, how it complains", "scheduled_for": "2026-09-27", "metricool_post_id": 382272319},
     {"poet": "Allama Iqbal", "opening_line": "Khudi ko kar buland itna ke har taqdeer se pehle", "scheduled_for": "2026-09-28", "metricool_post_id": 382272353},
     {"poet": "Mir Taqi Mir", "opening_line": "Patta patta boota boota haal hamara jaane hai", "scheduled_for": "2026-09-29", "metricool_post_id": 382272383},
