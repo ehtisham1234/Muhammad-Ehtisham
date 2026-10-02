@@ -1,0 +1,24 @@
+{
+  "notes": "Pre-existing YouTube videos (published before this automation started) cross-shared to Facebook + TikTok as thumbnail + YouTube-link posts, since the videos' actual files aren't reachable from this environment (youtube.com is network-blocked here). One per day at 12:00 Asia/Karachi, Oct 3-21.",
+  "posts": [
+    {"videoId": "SEg9vEZKHp8", "title": "Sukhan e dil Ep 1", "date": "2026-10-03", "metricool_post_id": 386977855},
+    {"videoId": "_vNjI2y3pIg", "title": "Iqbal ke alfaaz jo har dil ko jaga dein", "date": "2026-10-04", "metricool_post_id": 386977931},
+    {"videoId": "2-8-s5XOP8Y", "title": "Episode 2 (Jaun Elia)", "date": "2026-10-05", "metricool_post_id": 386977949},
+    {"videoId": "lzkSGFAXby4", "title": "Kamyabi Ka Asli Raaz", "date": "2026-10-06", "metricool_post_id": 386977967},
+    {"videoId": "7ecxn9vCk9g", "title": "Sabr Ka Asli Inaam", "date": "2026-10-07", "metricool_post_id": 386977984},
+    {"videoId": "N5XqQAMBs2o", "title": "Sukhan e dil Episode 4", "date": "2026-10-08", "metricool_post_id": 386978013},
+    {"videoId": "Q-fWbPErovs", "title": "Khud se mohabbat hi asli kamyabi hai", "date": "2026-10-09", "metricool_post_id": 386978074},
+    {"videoId": "sCOuNNRcQL0", "title": "Maya Ali on the power of silence", "date": "2026-10-10", "metricool_post_id": 386978099},
+    {"videoId": "1GXPP8A5A3E", "title": "Mirza Ghalib", "date": "2026-10-11", "metricool_post_id": 386978123},
+    {"videoId": "oUnR9YtJ28I", "title": "Bahadur Shah Zafar", "date": "2026-10-12", "metricool_post_id": 386978142},
+    {"videoId": "pilyLhxP4_Q", "title": "Momin Khan Momin", "date": "2026-10-13", "metricool_post_id": 386978161},
+    {"videoId": "nxC9n7dSm3k", "title": "Sukhan e dil | Mirza Ghalib", "date": "2026-10-14", "metricool_post_id": 386978287},
+    {"videoId": "vhpVRcXC_RY", "title": "Khud Par Yaqeen Rakho", "date": "2026-10-15", "metricool_post_id": 386978311},
+    {"videoId": "hv_xfBaq5jw", "title": "Mirza Ghalib (2)", "date": "2026-10-16", "metricool_post_id": 386978327},
+    {"videoId": "iNqmkEWIEI8", "title": "Raining for couples", "date": "2026-10-17", "metricool_post_id": 386978354},
+    {"videoId": "UQhhH5W8Cq8", "title": "Daagh Dehlvi", "date": "2026-10-18", "metricool_post_id": 386978380},
+    {"videoId": "oOSuP28n30U", "title": "Failure isn't the end", "date": "2026-10-19", "metricool_post_id": 386978469},
+    {"videoId": "Q-nKTUq-ewU", "title": "Trust your self", "date": "2026-10-20", "metricool_post_id": 386978497},
+    {"videoId": "bilCe6szc-Y", "title": "Waqt to waqt hai guzar jata hai", "date": "2026-10-21", "metricool_post_id": 386978520}
+  ]
+}
